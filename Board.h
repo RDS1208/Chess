@@ -1,0 +1,33 @@
+#pragma once
+
+#include <array>
+
+enum class PieceType {
+    None,
+    Pawn,
+    Knight,
+    Bishop,
+    Rook,
+    Queen,
+    King
+};
+
+enum class Color {
+    White,
+    Black
+};
+
+struct Piece {
+    PieceType type = PieceType::None;
+    Color color = Color::White;
+};
+
+class Board {
+public:
+    const Piece& at(int file, int rank) const;
+    void clear();
+    void ResetStartingPosition();
+
+private:
+    std::array<Piece, 64> squares{};
+};
