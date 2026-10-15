@@ -25,6 +25,7 @@ struct Piece {
 class Board {
 public:
     const Piece& at(int file, int rank) const;
+    void setPiece(int file, int rank, Piece piece);
     void clear();
     void resetStartingPosition();
 

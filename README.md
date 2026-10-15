@@ -12,7 +12,9 @@ The board representation is implemented:
 - Read-only square access with coordinate validation.
 - Clearing the board and setting up the standard starting position.
 
-The executable currently runs the CLion starter demonstration. It does not display the board or accept chess moves yet. Legal moves, check, checkmate, special moves, graphics, and an engine are planned.
+The executable displays the starting board and parses coordinate input such as `e2e4`. It rejects malformed input, prints the parsed coordinates, and exits on `quit` or end-of-file. Parsing does not move pieces or check move legality yet. Legal moves, check, checkmate, special moves, graphics, and an engine are planned.
+
+The rules module generates ordinary pseudo-legal moves for all six piece types, including pawn diagonal captures and initial double advances. It checks turns, boundaries, blockers, friendly occupancy, and king-capture exclusion. Both sides have 20 moves from the starting position. King-safety filtering, promotion, en passant, and castling are still pending. `Board::setPiece()` supports bounds-checked position setup.
 
 ## Board coordinates
 
@@ -35,12 +37,21 @@ board.clear();                  // Empties all squares.
 
 ## Project files
 
+Production headers are in `include/`, implementation files are in `src/`, and test sources are in `tests/`. CMake adds `include/` to the header search path, so source files can use includes such as `#include "Board.h"`.
+
 | File | Purpose |
 | --- | --- |
-| `Board.h` | Piece types, colors, piece data, and the board interface |
-| `Board.cpp` | Square access, clearing, and starting-position setup |
-| `main.cpp` | Current executable entry point |
+| `include/Board.h` | Piece types, colors, piece data, and the board interface |
+| `src/Board.cpp` | Square access, clearing, and starting-position setup |
+| `include/Move.h` | Square coordinates and move data |
+| `include/Position.h`, `src/Position.cpp` | Complete position state and starting-position construction |
+| `include/Rules.h`, `src/Rules.cpp` | Ordinary pseudo-legal move generation |
+| `include/Console.h`, `src/Console.cpp` | Board display and move input parsing |
+| `src/main.cpp` | Current executable entry point |
 | `CMakeLists.txt` | C++20 executable configuration |
+| `tests/MoveTests.cpp` | Move parsing checks |
+| `tests/KnightMovesTests.cpp` | Knight movement, captures, boundaries, and board setup checks |
+| `tests/PseudoLegalMovesTests.cpp` | Opening counts, pawn movement/captures, and king-capture rejection |
 
 ## Build and run
 
@@ -52,6 +63,12 @@ Open the project in CLion, let CMake configure it, and build/run the `Chess` tar
 cmake -S . -B build
 cmake --build build
 ./build/Chess
+```
+
+Run the parsing checks after building:
+
+```sh
+ctest --test-dir build --output-on-failure
 ```
 
 The run command above assumes a Unix-like system and a single-configuration build generator.

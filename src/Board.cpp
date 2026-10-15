@@ -9,6 +9,14 @@ const Piece& Board::at(int file, int rank) const {
 
     return squares[rank * 8 + file];
 }
+void Board::setPiece(int file, int rank, Piece piece) {
+    if (file < 0 || file >= 8 || rank < 0 || rank >= 8) {
+        throw std::out_of_range("Board coordinates must be between 0 and 7");
+    }
+
+    squares[rank * 8 + file] = piece;
+}
+
 void Board::clear() {
     for (auto& square : squares) {
         square = Piece();

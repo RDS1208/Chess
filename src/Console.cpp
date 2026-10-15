@@ -39,3 +39,21 @@ void printBoard(const Board& board, std::ostream& output) {
     }
     output << "  a b c d e f g h\n"; // Print file letters
 }
+
+std::optional<Move> parseMove(const std::string& text) {
+    if (text.size() != 4) {
+        return std::nullopt;
+    }
+
+    for (int offset = 0; offset < 4; offset += 2) {
+        if (text[offset] < 'a' || text[offset] > 'h' ||
+            text[offset + 1] < '1' || text[offset + 1] > '8') {
+            return std::nullopt;
+        }
+    }
+
+    return Move{
+        Square{text[0] - 'a', text[1] - '1'},
+        Square{text[2] - 'a', text[3] - '1'}
+    };
+}
