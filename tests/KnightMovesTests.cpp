@@ -1,4 +1,4 @@
-#include "Rules.h"
+#include "../include/Rules.h"
 
 #include <array>
 #include <initializer_list>
