@@ -42,7 +42,8 @@ if(CHESS_BUILD_GUI)
     target_include_directories(ChessGUI PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
     target_link_libraries(ChessGUI PRIVATE SFML::Graphics)
     target_compile_definitions(ChessGUI PRIVATE
-            CHESS_FONT_PATH="$<TARGET_FILE_DIR:ChessGUI>/assets/fonts/DejaVuSans.ttf")
+            CHESS_FONT_PATH="$<TARGET_FILE_DIR:ChessGUI>/assets/fonts/DejaVuSans.ttf"
+            CHESS_PIECES_PATH="$<TARGET_FILE_DIR:ChessGUI>/assets/pieces/neo")
     add_custom_command(TARGET ChessGUI POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/assets" "$<TARGET_FILE_DIR:ChessGUI>/assets")
@@ -50,7 +51,7 @@ endif()
 
 include(CTest)
 
-if(BUILD_TESTING)
+if(BUILD_TESTING AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests")
     add_executable(ChessMoveTests tests/MoveTests.cpp src/Board.cpp src/Console.cpp)
     target_include_directories(ChessMoveTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
     add_test(NAME MoveParsing COMMAND ChessMoveTests)

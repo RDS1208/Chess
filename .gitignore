@@ -2,6 +2,9 @@
 *.md
 !README.md
 
+# Keep test sources local
+/tests/
+
 # CLion and other editor settings
 .idea/
 *.iml

@@ -4,17 +4,21 @@
 #include "Game.h"
 
 #include <SFML/Graphics.hpp>
+#include <array>
 #include <optional>
 #include <string>
 
 class Gui {
 public:
+    // White then black, each in PieceType order: pawn, knight, bishop, rook, queen, king.
+    using PieceTextures = std::array<sf::Texture, 12>;
+
     static constexpr int Width = 720;
     static constexpr int Height = 910;
 
     explicit Gui(Game& game);
 
-    void draw(sf::RenderTarget& target, const sf::Font& font) const;
+    void draw(sf::RenderTarget& target, const sf::Font& font, const PieceTextures& pieces) const;
     void handleClick(int x, int y);
     void undo();
     void clearSelection();

@@ -53,6 +53,10 @@ GameStatus Game::getStatus() const {
         return GameStatus::DrawBySeventyFiveMoveRule;
     }
 
+    if (rules::isDeadPositionInsufficientMaterial(position)) {
+        return GameStatus::DeadPositionInsufficientMaterial;
+    }
+
     if (isCheck) {
         return GameStatus::Check;
     }
@@ -156,6 +160,10 @@ bool Game::tryMove(const Move& move, std::string& error) {
     }
     if (status == GameStatus::DrawBySeventyFiveMoveRule) {
         error = "The game is over: draw by the 75-move rule.";
+        return false;
+    }
+    if (status == GameStatus::DeadPositionInsufficientMaterial) {
+        error = "The game is over: dead position.";
         return false;
     }
 
@@ -265,6 +273,8 @@ void Game::run(std::istream& input, std::ostream& output) {
             output << "Draw by fivefold repetition.\n";
         } else if (status == GameStatus::DrawBySeventyFiveMoveRule) {
             output << "Draw by the 75-move rule.\n";
+        } else if (status == GameStatus::DeadPositionInsufficientMaterial) {
+            output << "Dead position: insufficient material to checkmate.\n";
         } else if (status == GameStatus::Check) {
             output << "Check.\n";
         }

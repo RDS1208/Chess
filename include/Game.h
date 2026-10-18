@@ -21,7 +21,8 @@ enum class GameStatus {
     DrawByRepetition,
     DrawByFiftyMoveRule,
     DrawByFivefoldRepetition,
-    DrawBySeventyFiveMoveRule
+    DrawBySeventyFiveMoveRule,
+    DeadPositionInsufficientMaterial
 };
 
 class Game {

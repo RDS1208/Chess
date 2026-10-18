@@ -513,22 +513,56 @@ bool rules::threeFoldRepetition(const std::vector<Position>& history, const Posi
 bool rules::fiveFoldRepetition(const std::vector<Position>& history, const Position& current) {
     return countRepetitions(history, current) >= 5;
 }
+bool rules::isDeadPositionInsufficientMaterial(const Position &position) {
 
-bool rules::isDeadPosition(const Position &position) {
-    bool whiteHasMaterial = false;
-    bool blackHasMaterial = false;
-    for (int rank =0 ; rank < 8 ; ++rank)
-    {
-        for (int file = 0 ; file < 8 ; ++file)
-        {
+    int whiteBishops = 0;
+    int blackBishops = 0;
+    int whiteKnights = 0;
+    int blackKnights = 0;
+    int bishopSquareColor = -1; // No bishop found yet
+    bool bishopsOnSameColor = true;
+    for (int rank =0 ; rank < 8 ; ++rank) {
+        for (int file =0; file<8; ++file) {
             const Piece& piece = position.board.at(file, rank);
             if (piece.type == PieceType::None || piece.type == PieceType::King) continue;
-            if (piece.color == Color::White) {
-                whiteHasMaterial = true;
-            } else {
-                blackHasMaterial = true;
+
+            // Compare square colors, not the colors of the players
+            if (piece.type == PieceType::Bishop) {
+                const int squareColor = (file + rank) % 2;
+                if (bishopSquareColor == -1) {
+                    bishopSquareColor = squareColor;
+                } else if (squareColor != bishopSquareColor) {
+                    bishopsOnSameColor = false;
+                }
             }
+
+            if (piece.color == Color::White) {
+                if (piece.type == PieceType::Bishop) ++whiteBishops;
+                if (piece.type == PieceType::Knight) ++whiteKnights;
+                if (piece.type == PieceType::Rook || piece.type == PieceType::Queen || piece.type == PieceType::Pawn) {
+                    return false; // Not covered by these material checks
+                }
+            } else {
+                if (piece.type == PieceType::Bishop) ++blackBishops;
+                if (piece.type == PieceType::Knight) ++blackKnights;
+                if (piece.type == PieceType::Rook || piece.type == PieceType::Queen || piece.type == PieceType::Pawn) {
+                    return false; // Not covered by these material checks
+                }
+            }
+
         }
+
     }
-    return !whiteHasMaterial || !blackHasMaterial;
+    if (whiteBishops == 0 && blackBishops == 0 && whiteKnights == 0 && blackKnights == 0) {
+        return true; // Only kings left
+    }
+    if ((whiteBishops + whiteKnights == 1 && blackBishops == 0 && blackKnights == 0) ||
+        (blackBishops + blackKnights == 1 && whiteBishops == 0 && whiteKnights == 0)) {
+        return true; // Only kings and one minor piece left
+    }
+    if (whiteKnights == 0 && blackKnights == 0 &&
+        whiteBishops + blackBishops > 0 && bishopsOnSameColor) {
+        return true; // Only kings and bishops confined to the same square color
+    }
+    return false; // No dead position established by these material checks
 }

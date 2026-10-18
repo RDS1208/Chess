@@ -1,0 +1,10 @@
+Chess.com Neo chess pieces
+
+Source: https://www.chess.com/chess-themes/pieces/neo/150/{piece}.png
+Downloaded: 2026-10-19
+
+Files: wp, wn, wb, wr, wq, wk, bp, bn, bb, br, bq, bk (PNG).
+w = white, b = black; p = pawn, n = knight, b = bishop,
+r = rook, q = queen, k = king.
+
+Piece artwork belongs to Chess.com. No additional license is granted here.

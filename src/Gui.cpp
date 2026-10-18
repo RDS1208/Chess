@@ -30,19 +30,6 @@ void drawGuiButton(sf::RenderTarget& target, const sf::Font& font, const std::st
     drawGuiText(target, font, label, 15, {x + width / 2.f, y + 19.f}, sf::Color::White, true);
 }
 
-// Chess symbols provided by the bundled font
-char32_t pieceGlyph(PieceType type) {
-    switch (type) {
-        case PieceType::King: return U'\u265A';
-        case PieceType::Queen: return U'\u265B';
-        case PieceType::Rook: return U'\u265C';
-        case PieceType::Bishop: return U'\u265D';
-        case PieceType::Knight: return U'\u265E';
-        case PieceType::Pawn: return U'\u265F';
-        default: return U' ';
-    }
-}
-
 Gui::Gui(Game& game) : game(game) {
     checkDrawOffer();
 }
@@ -58,7 +45,7 @@ void Gui::checkDrawOffer() {
 }
 
 // Draw the board, pieces, game status, and controls
-void Gui::draw(sf::RenderTarget& target, const sf::Font& font) const {
+void Gui::draw(sf::RenderTarget& target, const sf::Font& font, const PieceTextures& pieces) const {
     const Position& position = game.getPosition();
     const GameStatus status = game.getStatus();
     std::string heading = "White to move";
@@ -85,6 +72,8 @@ void Gui::draw(sf::RenderTarget& target, const sf::Font& font) const {
         heading = "Draw by fivefold repetition.";
     } else if (status == GameStatus::DrawBySeventyFiveMoveRule) {
         heading = "Draw by the 75-move rule.";
+    } else if (status == GameStatus::DeadPositionInsufficientMaterial) {
+        heading = "Draw by insufficient material.";
     }
     drawGuiText(target, font, heading, 24, {40.f, 16.f}, sf::Color(242, 240, 233));
 
@@ -144,21 +133,17 @@ void Gui::draw(sf::RenderTarget& target, const sf::Font& font) const {
                 target.draw(marker);
             }
 
-            // Use the same silhouette with different colors for each player
+            // Draw the matching Neo image, scaled to the square.
             if (piece.type != PieceType::None) {
-                sf::Text symbol(font, sf::String(pieceGlyph(piece.type)), 58);
-                const auto bounds = symbol.getLocalBounds();
-                symbol.setOrigin(bounds.position + bounds.size / 2.f);
-                symbol.setPosition({x + 40.f, y + 40.f});
-                symbol.setFillColor(sf::Color(37, 39, 43));
-                symbol.setOutlineColor(sf::Color(239, 231, 212));
-                symbol.setOutlineThickness(1.f);
-                if (piece.color == Color::White) {
-                    symbol.setFillColor(sf::Color(255, 251, 235));
-                    symbol.setOutlineColor(sf::Color(44, 42, 38));
-                    symbol.setOutlineThickness(1.5f);
-                }
-                target.draw(symbol);
+                const int index = (piece.color == Color::White ? 0 : 6) +
+                                  static_cast<int>(piece.type) - 1;
+                const auto& texture = pieces[index];
+                const auto size = texture.getSize();
+                sf::Sprite sprite(texture);
+                sprite.setScale({static_cast<float>(SquareSize) / size.x,
+                                 static_cast<float>(SquareSize) / size.y});
+                sprite.setPosition({x, y});
+                target.draw(sprite);
             }
 
             if (selectedSquare && selectedSquare->file == file && selectedSquare->rank == rank) {

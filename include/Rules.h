@@ -21,7 +21,7 @@ namespace rules {
     int countRepetitions(const std::vector<Position>& history, const Position& current);
     bool threeFoldRepetition(const std::vector<Position>& history, const Position& current);
     bool fiveFoldRepetition(const std::vector<Position>& history, const Position& current);
-    bool isDeadPosition(const Position& position);
+    bool isDeadPositionInsufficientMaterial(const Position& position);
 }
 
 #endif //CHESS_RULES_H

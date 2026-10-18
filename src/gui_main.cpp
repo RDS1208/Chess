@@ -1,6 +1,7 @@
 #include "Gui.h"
 
 #include <iostream>
+#include <filesystem>
 
 int main() {
     sf::RenderWindow window(sf::VideoMode({Gui::Width, Gui::Height}), "Chess",
@@ -11,6 +12,21 @@ int main() {
     if (!font.openFromFile(CHESS_FONT_PATH)) {
         std::cerr << "Could not load the chess font. Rebuild the ChessGUI target to copy assets.\n";
         return 1;
+    }
+
+    Gui::PieceTextures pieces;
+    const char* filenames[] = {
+        "wp.png", "wn.png", "wb.png", "wr.png", "wq.png", "wk.png",
+        "bp.png", "bn.png", "bb.png", "br.png", "bq.png", "bk.png"
+    };
+    for (std::size_t index = 0; index < pieces.size(); ++index) {
+        const auto path = std::filesystem::path(CHESS_PIECES_PATH) / filenames[index];
+        if (!pieces[index].loadFromFile(path)) {
+            std::cerr << "Could not load chess piece: " << path
+                      << ". Rebuild the ChessGUI target to copy assets.\n";
+            return 1;
+        }
+        pieces[index].setSmooth(true);
     }
 
     Game game;
@@ -37,7 +53,7 @@ int main() {
         // Redraw the interface
         if (window.isOpen()) {
             window.clear(sf::Color(31, 37, 45));
-            gui.draw(window, font);
+            gui.draw(window, font, pieces);
             window.display();
         }
     }
