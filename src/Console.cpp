@@ -41,7 +41,7 @@ void printBoard(const Board& board, std::ostream& output) {
 }
 
 std::optional<Move> parseMove(const std::string& text) {
-    if (text.size() != 4) {
+    if (text.size() != 4 && text.size() != 5) {
         return std::nullopt;
     }
 
@@ -52,8 +52,29 @@ std::optional<Move> parseMove(const std::string& text) {
         }
     }
 
+    PieceType promotion = PieceType::None;
+    if (text.size() == 5) {
+        switch (text[4]) {
+            case 'q':
+                promotion = PieceType::Queen;
+                break;
+            case 'r':
+                promotion = PieceType::Rook;
+                break;
+            case 'b':
+                promotion = PieceType::Bishop;
+                break;
+            case 'n':
+                promotion = PieceType::Knight;
+                break;
+            default:
+                return std::nullopt;
+        }
+    }
+
     return Move{
         Square{text[0] - 'a', text[1] - '1'},
-        Square{text[2] - 'a', text[3] - '1'}
+        Square{text[2] - 'a', text[3] - '1'},
+        promotion
     };
 }

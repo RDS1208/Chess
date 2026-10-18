@@ -22,7 +22,15 @@ struct Position {
     std::optional<Square> enPassantTarget = std::nullopt;
     unsigned int halfmoveClock = 0;
     unsigned int fullmoveNumber = 1;
+
+
 };
+
+
+// Applies a generated move, including promotion, en passant, and castling, without checking legality.
+// Throws std::invalid_argument for a missing/invalid promotion or a choice on another move.
+void applyMove(Position& position, const Move& move);
+
 
 Position createStartingPosition();
 
