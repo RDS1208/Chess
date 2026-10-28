@@ -30,8 +30,15 @@ void drawGuiButton(sf::RenderTarget& target, const sf::Font& font, const std::st
     drawGuiText(target, font, label, 15, {x + width / 2.f, y + 19.f}, sf::Color::White, true);
 }
 
-Gui::Gui(Game& game) : game(game) {
+Gui::Gui(Game& game, std::ostream& output) : game(game), output(output) {
     checkDrawOffer();
+    game.printEvaluation(output);
+}
+
+void Gui::showModeSelection() {
+    selectingMode = true;
+    selectedSquare.reset();
+    drawOffer = DrawOffer::None;
 }
 
 // Offer a draw when the current position qualifies
@@ -46,6 +53,18 @@ void Gui::checkDrawOffer() {
 
 // Draw the board, pieces, game status, and controls
 void Gui::draw(sf::RenderTarget& target, const sf::Font& font, const PieceTextures& pieces) const {
+    // Startup mode selection
+    if (selectingMode) {
+        drawGuiText(target, font, "Choose a game mode", 28, {360.f, 250.f}, sf::Color::White, true);
+        drawGuiText(target, font, "Play locally with another person, or play as White.", 16,
+                    {360.f, 295.f}, sf::Color(191, 203, 214), true);
+        drawGuiButton(target, font, "Player vs player", 160.f, 340.f, 400.f);
+        drawGuiButton(target, font, "You: White vs random engine: Black", 160.f, 400.f, 400.f);
+        drawGuiText(target, font, "Select a mode to begin.", 16, {360.f, 480.f},
+                    sf::Color(191, 203, 214), true);
+        return;
+    }
+
     const Position& position = game.getPosition();
     const GameStatus status = game.getStatus();
     std::string heading = "White to move";
@@ -221,6 +240,24 @@ void Gui::draw(sf::RenderTarget& target, const sf::Font& font, const PieceTextur
 
 // Convert mouse clicks into moves or button actions
 void Gui::handleClick(int x, int y) {
+    if (selectingMode) {
+        if (x >= 160 && x < 560) {
+            if (y >= 340 && y < 378) {
+                game.setMode(GameMode::PlayerVsPlayer);
+                message = "Player vs player. White to move.";
+            } else if (y >= 400 && y < 438) {
+                game.setMode(GameMode::PlayerVsEngine);
+                message = "You play White. The random engine plays Black.";
+            } else {
+                return;
+            }
+            selectingMode = false;
+            game.printEvaluation(output);
+            checkDrawOffer();
+        }
+        return;
+    }
+
     if (x >= 40 && x < 150 && y >= ControlsTop && y < ControlsTop + 38) {
         undo();
         return;
@@ -229,6 +266,10 @@ void Gui::handleClick(int x, int y) {
     const auto status = game.getStatus();
     if (status != GameStatus::Playing && status != GameStatus::Check) {
         message = "Game over. Undo to resume play, or close the window.";
+        return;
+    }
+    if (game.isEngineTurn()) {
+        message = "Black is controlled by the engine.";
         return;
     }
 
@@ -261,7 +302,12 @@ void Gui::handleClick(int x, int y) {
     // Draw by agreement
     if (x >= 40 && x < 150 && y >= DrawControlsTop && y < DrawControlsTop + 38) {
         selectedSquare.reset();
-        drawOffer = DrawOffer::Agreement;
+        if (game.getMode() == GameMode::PlayerVsEngine) {
+            game.agreeDraw();
+            message = "The engine accepted your draw offer. Undo to resume play.";
+        } else {
+            drawOffer = DrawOffer::Agreement;
+        }
         return;
     }
 
@@ -308,6 +354,13 @@ void Gui::handleClick(int x, int y) {
     if (game.tryMove(move, message)) {
         selectedSquare.reset();
         message = "Move played. Select the next piece.";
+        game.printEvaluation(output);
+        if (game.isEngineTurn()) {
+            if (game.playEngineMove(message)) {
+                message = "Engine moved. Select your next move.";
+                game.printEvaluation(output);
+            }
+        }
         checkDrawOffer();
         const auto nextStatus = game.getStatus();
         if (nextStatus != GameStatus::Playing && nextStatus != GameStatus::Check) {
@@ -318,10 +371,14 @@ void Gui::handleClick(int x, int y) {
 
 // Restore the previous complete position
 void Gui::undo() {
+    if (selectingMode) {
+        return;
+    }
     selectedSquare.reset();
     drawOffer = DrawOffer::None;
-    if (game.undo()) {
+    if (game.undoTurn()) {
         message = "Undo successful.";
+        game.printEvaluation(output);
     } else {
         message = "No moves to undo.";
     }
@@ -330,6 +387,9 @@ void Gui::undo() {
 
 // Cancel an unfinished mouse move
 void Gui::clearSelection() {
+    if (selectingMode) {
+        return;
+    }
     selectedSquare.reset();
     message = "Click one of your pieces, then click its destination.";
 }

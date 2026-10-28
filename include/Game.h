@@ -7,10 +7,13 @@
 
 #include "Move.h"
 #include "Position.h"
+#include "Engine.h"
 
 #include <iosfwd>
 #include <string>
 #include <vector>
+
+enum class GameMode { PlayerVsPlayer, PlayerVsEngine };
 
 enum class GameStatus {
     Playing,
@@ -29,6 +32,13 @@ class Game {
 public:
     Game();
     explicit Game(const Position& startingPosition);
+
+    bool chooseMode(std::istream& input, std::ostream& output);
+    void setMode(GameMode mode);
+    GameMode getMode() const;
+    bool isEngineTurn() const;
+    bool playEngineMove(std::string& error);
+    void printEvaluation(std::ostream& output) const;
 
     // Console game loop
     void run(std::istream& input, std::ostream& output);
@@ -52,6 +62,8 @@ public:
 
     // Clear a claimed/agreed draw and restore the previous position when available
     bool undo();
+    // In engine mode, undo both moves to return control to White
+    bool undoTurn();
 
     // Check, checkmate, stalemate, claimed/agreed draw, or ordinary play
     GameStatus getStatus() const;
@@ -63,6 +75,8 @@ private:
     Position position;
     std::vector<Position> positionhistory;
     GameStatus drawResult = GameStatus::Playing;
+    GameMode mode = GameMode::PlayerVsPlayer;
+    Engine engine;
 };
 
 #endif //CHESS_GAME_H

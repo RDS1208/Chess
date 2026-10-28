@@ -5,6 +5,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <array>
+#include <iostream>
 #include <optional>
 #include <string>
 
@@ -16,7 +17,9 @@ public:
     static constexpr int Width = 720;
     static constexpr int Height = 910;
 
-    explicit Gui(Game& game);
+    explicit Gui(Game& game, std::ostream& output = std::cout);
+
+    void showModeSelection();
 
     void draw(sf::RenderTarget& target, const sf::Font& font, const PieceTextures& pieces) const;
     void handleClick(int x, int y);
@@ -35,6 +38,8 @@ private:
     static constexpr int DrawControlsTop = 842;
 
     Game& game;
+    std::ostream& output;
+    bool selectingMode = false;
     std::optional<Square> selectedSquare;
     PieceType promotionChoice = PieceType::Queen;
     DrawOffer drawOffer = DrawOffer::None;

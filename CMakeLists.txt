@@ -16,6 +16,8 @@ add_executable(Chess
         include/Rules.h
         src/Game.cpp
         include/Game.h
+        src/Engine.cpp
+        include/Engine.h
 )
 target_include_directories(Chess PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
@@ -38,7 +40,7 @@ if(CHESS_BUILD_GUI)
         FetchContent_MakeAvailable(SFML)
     endif()
     add_executable(ChessGUI src/gui_main.cpp src/Gui.cpp include/Gui.h
-            src/Game.cpp src/Board.cpp src/Console.cpp src/Position.cpp src/Rules.cpp)
+            src/Game.cpp src/Board.cpp src/Console.cpp src/Position.cpp src/Rules.cpp src/Engine.cpp)
     target_include_directories(ChessGUI PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
     target_link_libraries(ChessGUI PRIVATE SFML::Graphics)
     target_compile_definitions(ChessGUI PRIVATE
@@ -88,17 +90,25 @@ if(BUILD_TESTING AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests")
     target_include_directories(ChessCastlingTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
     add_test(NAME Castling COMMAND ChessCastlingTests)
 
-    add_executable(ChessGameTests tests/GameTests.cpp src/Game.cpp src/Board.cpp src/Console.cpp src/Position.cpp src/Rules.cpp)
+    add_executable(ChessGameTests tests/GameTests.cpp src/Game.cpp src/Board.cpp src/Console.cpp src/Position.cpp src/Rules.cpp src/Engine.cpp)
     target_include_directories(ChessGameTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
     add_test(NAME GameMoves COMMAND ChessGameTests)
 
-    add_executable(ChessDrawTests tests/DrawTests.cpp src/Game.cpp src/Board.cpp src/Console.cpp src/Position.cpp src/Rules.cpp)
+    add_executable(ChessDrawTests tests/DrawTests.cpp src/Game.cpp src/Board.cpp src/Console.cpp src/Position.cpp src/Rules.cpp src/Engine.cpp)
     target_include_directories(ChessDrawTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
     add_test(NAME DrawRules COMMAND ChessDrawTests)
 
+    add_executable(ChessEngineTests tests/EngineTests.cpp src/Engine.cpp src/Board.cpp src/Position.cpp src/Rules.cpp)
+    target_include_directories(ChessEngineTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+    add_test(NAME MaterialEvaluation COMMAND ChessEngineTests)
+
+    add_executable(ChessEngineGameTests tests/EngineGameTests.cpp src/Game.cpp src/Engine.cpp src/Board.cpp src/Console.cpp src/Position.cpp src/Rules.cpp)
+    target_include_directories(ChessEngineGameTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+    add_test(NAME EnginePlay COMMAND ChessEngineGameTests)
+
     if(TARGET ChessGUI)
         add_executable(ChessGuiTests tests/GuiTests.cpp src/Gui.cpp
-                src/Game.cpp src/Board.cpp src/Console.cpp src/Position.cpp src/Rules.cpp)
+                src/Game.cpp src/Board.cpp src/Console.cpp src/Position.cpp src/Rules.cpp src/Engine.cpp)
         target_include_directories(ChessGuiTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
         target_link_libraries(ChessGuiTests PRIVATE SFML::Graphics)
         add_test(NAME GraphicalInput COMMAND ChessGuiTests)

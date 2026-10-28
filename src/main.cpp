@@ -4,6 +4,8 @@
 
 int main() {
     Game game;
-    game.run(std::cin, std::cout);
+    if (game.chooseMode(std::cin, std::cout)) {
+        game.run(std::cin, std::cout);
+    }
     return 0;
 }

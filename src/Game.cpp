@@ -8,7 +8,9 @@
 #include "Rules.h"
 
 #include <istream>
+#include <iomanip>
 #include <ostream>
+#include <sstream>
 
 // Starting position
 Game::Game() : position(createStartingPosition()) {
@@ -16,6 +18,75 @@ Game::Game() : position(createStartingPosition()) {
 
 // Start a game from a supplied position
 Game::Game(const Position& startingPosition) : position(startingPosition) {
+}
+
+// Console startup menu
+bool Game::chooseMode(std::istream& input, std::ostream& output) {
+    while (true) {
+        output << "1. Player vs player\n2. Player (White) vs random engine (Black)\n"
+               << "Choose 1 or 2, or quit: " << std::flush;
+        std::string choice;
+        if (!std::getline(input, choice) || choice == "quit") {
+            return false;
+        }
+        if (choice == "1") {
+            setMode(GameMode::PlayerVsPlayer);
+            return true;
+        }
+        if (choice == "2") {
+            setMode(GameMode::PlayerVsEngine);
+            return true;
+        }
+        output << "Please enter 1 or 2.\n";
+    }
+}
+
+void Game::setMode(GameMode selectedMode) {
+    mode = selectedMode;
+}
+
+GameMode Game::getMode() const {
+    return mode;
+}
+
+bool Game::isEngineTurn() const {
+    if (mode != GameMode::PlayerVsEngine || position.sideToMove != Color::Black) {
+        return false;
+    }
+    const auto status = getStatus();
+    return status == GameStatus::Playing || status == GameStatus::Check;
+}
+
+// The random engine accepts available draws before choosing a move
+bool Game::playEngineMove(std::string& error) {
+    error.clear();
+    if (!isEngineTurn()) {
+        error = "It is not the engine's turn, or the game has ended.";
+        return false;
+    }
+    if (canClaimThreefoldDraw()) {
+        return claimThreefoldDraw();
+    }
+    if (canClaimFiftyMoveDraw()) {
+        return claimFiftyMoveDraw();
+    }
+    const auto move = engine.chooseBestMove(position, 4);
+    if (!move) {
+        error = "The engine has no legal moves.";
+        return false;
+    }
+    return tryMove(*move, error);
+}
+
+// Keep displayed scores in White's perspective across turn changes
+void Game::printEvaluation(std::ostream& output) const {
+    int score = engine.evaluate(position);
+    if (position.sideToMove == Color::Black) {
+        score = -score;
+    }
+    std::ostringstream formatted;
+    formatted << std::showpos << std::fixed << std::setprecision(4) << score / 100.0;
+    output << "Evaluation (White): " << formatted.str() << '\n' << std::flush;
 }
 
 // Draw the board and show whose turn it is
@@ -27,6 +98,7 @@ void Game::drawBoard(std::ostream& output) const {
     } else {
         output << "Black to move.\n";
     }
+    printEvaluation(output);
 }
 
 // Check the state of the player whose turn it is
@@ -125,6 +197,17 @@ bool Game::undo() {
     drawResult = GameStatus::Playing;
     position = positionhistory.back();
     positionhistory.pop_back();
+    return true;
+}
+
+bool Game::undoTurn() {
+    if (!undo()) {
+        return false;
+    }
+    if (mode == GameMode::PlayerVsEngine && position.sideToMove == Color::Black &&
+        !positionhistory.empty()) {
+        undo();
+    }
     return true;
 }
 
@@ -279,6 +362,17 @@ void Game::run(std::istream& input, std::ostream& output) {
             output << "Check.\n";
         }
 
+        // Black is controlled by the engine in this mode
+        if (isEngineTurn()) {
+            output << "Engine (Black) is choosing a move.\n";
+            std::string error;
+            if (!playEngineMove(error)) {
+                output << error << '\n';
+                return;
+            }
+            continue;
+        }
+
         // Offer available claims; the player may continue instead
         const bool threefold = canClaimThreefoldDraw();
         const bool fiftyMoves = canClaimFiftyMoveDraw();
@@ -332,7 +426,7 @@ void Game::run(std::istream& input, std::ostream& output) {
             return;
         }
         if (text == "undo") {
-            if (undo()) {
+            if (undoTurn()) {
                 output << "Undo successful.\n";
             } else {
                 output << "No moves to undo.\n";
@@ -348,6 +442,11 @@ void Game::run(std::istream& input, std::ostream& output) {
 
         // Draw by agreement
         if (text == "draw") {
+            if (mode == GameMode::PlayerVsEngine) {
+                agreeDraw();
+                output << "Engine accepts the draw.\n";
+                continue;
+            }
             output << "Draw has been offered. Does the other player accept? (y/n): " << std::flush;
             std::string response;
             while (true) {

@@ -31,6 +31,7 @@ int main() {
 
     Game game;
     Gui gui(game);
+    gui.showModeSelection();
 
     while (window.isOpen()) {
         // Mouse and keyboard input

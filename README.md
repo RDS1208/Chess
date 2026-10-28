@@ -1,6 +1,6 @@
 # Chess
 
-A C++ chess learning project with a terminal interface and an SFML graphical interface. Two players can play locally using the same game logic in either interface.
+A C++ chess learning project with a terminal interface and an SFML graphical interface. At startup, choose local player versus player or play White against a random-move engine controlling Black. Both interfaces use the same game logic.
 
 ## Technologies
 
@@ -18,8 +18,10 @@ A C++ chess learning project with a terminal interface and an SFML graphical int
 - Draw offers, threefold repetition and 50-move draw claims, plus automatic fivefold repetition and 75-move draws.
 - Move history and undo, including resuming play after a result.
 - A graphical board with Chess.com Neo pieces, piece selection, legal move highlights, promotion controls, and draw prompts.
+- A random legal-move engine, material evaluation, and automatic Black replies in either interface.
+- Live evaluation printed to the console at the start and after moves or undo, in pawn units from White's perspective (`+1.00` means White is a pawn ahead).
 
-SAN notation, complete dead-position detection, and a chess engine are still planned.
+SAN notation, complete dead-position detection, and engine search are still planned. The current engine selects moves randomly; material evaluation is displayed separately.
 
 ## Architecture and separation of concerns
 
@@ -32,6 +34,7 @@ Headers live in `include/`, implementations in `src/`, and graphical resources i
 | `Position` | Stores the board, side to move, castling rights, en passant target, and move counters. `applyMove` updates this state after validation. |
 | `Rules` | Generates moves, checks attacks and king safety, and compares positions for repetition. |
 | `Game` | Validates moves through `Rules`, owns the current position and undo history, and determines results and draw availability. It also contains the terminal game loop. |
+| `Engine` | Evaluates material and chooses a random legal move. `Game` owns an engine and applies its selected moves through normal validation. |
 | `Console` | Prints the board and parses terminal move text. |
 | `Gui` | Draws the board and piece sprites and translates clicks into moves and game actions. Selection and dialog state stay here. |
 | `main.cpp` / `gui_main.cpp` | Start the terminal game or the SFML window and event loop. The graphical entry point loads the font and piece textures once at startup. |
@@ -62,9 +65,11 @@ These executable paths assume a Unix-like system and a single-configuration buil
 
 ## How to play
 
-**Graphical:** click a piece, then a highlighted destination. Select a promotion piece before moving a pawn to its final rank; queen is the default. Use **Undo** or **U** to undo one move, **Esc** to clear selection, and **Offer draw** to request a draw. Available draw claims appear in a dialog.
+**Graphical:** choose a mode in the startup menu, then click a piece and a highlighted destination. Select a promotion piece before moving a pawn to its final rank; queen is the default. Use **Undo** or **U**, **Esc** to clear selection, and **Offer draw** to request a draw. Available draw claims appear in a dialog. Evaluation is printed to the terminal or CLion Run console used to launch the GUI.
 
-**Terminal:** enter moves such as `e2e4`, castling as `e1g1`, or promotion as `e7e8q` (`q`, `r`, `b`, or `n` is required). Use `undo`, `draw`, or `quit`; answer draw prompts with `y` or `n`.
+**Terminal:** choose `1` for player versus player or `2` for White versus engine Black. Enter moves such as `e2e4`, castling as `e1g1`, or promotion as `e7e8q` (`q`, `r`, `b`, or `n` is required). Use `undo`, `draw`, or `quit`; answer draw prompts with `y` or `n`.
+
+In player-versus-player mode, undo takes back one move. Against the engine, it takes back the completed human/engine turn so White can choose again. The random engine accepts draw offers and claims available draws on its own turn.
 
 Draw claims are offered once the current position qualifies; claims based on an intended future move are not implemented. After a result, undo can resume play.
 
