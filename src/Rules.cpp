@@ -322,87 +322,210 @@ std::vector<Move> rules::generatePseudoLegalMoves(const Position& position) {
 
 // Attack detection
 bool rules::isSquareAttacked(const Position& position, Square square, Color attackingColor) {
-    for (int rank = 0; rank < 8; ++rank) {
-        for (int file = 0; file < 8; ++file) {
-            const Piece& piece = position.board.at(file, rank);
-            if (piece.type == PieceType::None || piece.color != attackingColor) {
+    // for (int rank = 0; rank < 8; ++rank) {
+    //     for (int file = 0; file < 8; ++file) {
+    //         const Piece& piece = position.board.at(file, rank);
+    //         if (piece.type == PieceType::None || piece.color != attackingColor) {
+    //             continue;
+    //         }
+    //
+    //         const int fileDifference = square.file - file;
+    //         const int rankDifference = square.rank - rank;
+    //         const int fileDistance = std::abs(fileDifference);
+    //         const int rankDistance = std::abs(rankDifference);
+    //
+    //         // A piece does not attack its own square.
+    //         if (fileDistance == 0 && rankDistance == 0) {
+    //             continue;
+    //         }
+    //
+    //         if (piece.type == PieceType::Pawn) {
+    //             const int direction = piece.color == Color::White ? 1 : -1;
+    //             if (fileDistance == 1 && rankDifference == direction) {
+    //                 return true;
+    //             }
+    //         }
+    //
+    //         if (piece.type == PieceType::Knight) {
+    //             if ((fileDistance == 1 && rankDistance == 2) ||
+    //                 (fileDistance == 2 && rankDistance == 1)) {
+    //                 return true;
+    //             }
+    //         }
+    //
+    //         if (piece.type == PieceType::King) {
+    //             if (fileDistance <= 1 && rankDistance <= 1) {
+    //                 return true;
+    //             }
+    //         }
+    //
+    //         const bool straight = fileDifference == 0 || rankDifference == 0;
+    //         const bool diagonal = fileDistance == rankDistance;
+    //         const bool slidingAttack =
+    //             (piece.type == PieceType::Rook && straight) ||
+    //             (piece.type == PieceType::Bishop && diagonal) ||
+    //             (piece.type == PieceType::Queen && (straight || diagonal));
+    //         if (!slidingAttack) {
+    //             continue;
+    //         }
+    //
+    //         // Each step is -1, 0, or 1, pointing toward the target square.
+    //         int fileStep = 0;
+    //         if (fileDifference > 0) {
+    //             fileStep = 1;
+    //         } else if (fileDifference < 0) {
+    //             fileStep = -1;
+    //         }
+    //
+    //         int rankStep = 0;
+    //         if (rankDifference > 0) {
+    //             rankStep = 1;
+    //         } else if (rankDifference < 0) {
+    //             rankStep = -1;
+    //         }
+    //
+    //         int currentFile = file + fileStep;
+    //         int currentRank = rank + rankStep;
+    //         bool blocked = false;
+    //
+    //         // Only intervening pieces block: the target can be occupied by either color.
+    //         while (currentFile != square.file || currentRank != square.rank) {
+    //             if (position.board.at(currentFile, currentRank).type != PieceType::None) {
+    //                 blocked = true;
+    //                 break;
+    //             }
+    //             currentFile += fileStep;
+    //             currentRank += rankStep;
+    //         }
+    //         if (!blocked) {
+    //             return true;
+    //         }
+    //     }
+    // }
+    // return false;
+
+
+    constexpr int knightMoves[8][2] = {
+        {1, 2}, {2, 1}, {2, -1}, {1, -2},
+        {-1, -2}, {-2, -1}, {-2, 1}, {-1, 2}
+    };
+
+    for (const auto& offset : knightMoves) {
+        int attackerFile = square.file + offset[0];
+        int attackerRank = square.rank + offset[1];
+
+        if (attackerFile < 0 || attackerFile >= 8 ||
+            attackerRank < 0 || attackerRank >= 8) {
+            continue;
+            }
+
+        const Piece& piece =
+            position.board.at(attackerFile, attackerRank);
+
+        if (piece.type == PieceType::Knight &&
+            piece.color == attackingColor) {
+            return true;
+            }
+    }
+
+    constexpr int kingMoves[8][2] = {
+        {1, 0}, {-1, 0}, {0, 1}, {0, -1},
+        {1, 1}, {1, -1}, {-1, 1}, {-1, -1}
+    };
+
+    for (const auto &move : kingMoves) {
+        int attackerFile = square.file + move[0];
+        int attackerRank = square.rank + move[1];
+
+        if (attackerFile < 0 || attackerFile >= 8 ||
+            attackerRank < 0 || attackerRank >= 8) {
+            continue;
+        }
+
+        const Piece &piece =
+            position.board.at(attackerFile, attackerRank);
+
+        if (piece.type == PieceType::King &&
+            piece.color == attackingColor) {
+            return true;
+        }
+    }
+
+    int attackerRank = square.rank +1;
+
+    if (attackingColor == Color::White) attackerRank = square.rank -1;
+
+    if (attackerRank >= 0 && attackerRank < 8) {
+        for (int fileOffset : {-1, 1}) {
+            int attackerFile = square.file + fileOffset;
+
+            if (attackerFile < 0 || attackerFile >= 8) {
                 continue;
             }
 
-            const int fileDifference = square.file - file;
-            const int rankDifference = square.rank - rank;
-            const int fileDistance = std::abs(fileDifference);
-            const int rankDistance = std::abs(rankDifference);
+            const Piece& piece =
+                position.board.at(attackerFile, attackerRank);
 
-            // A piece does not attack its own square.
-            if (fileDistance == 0 && rankDistance == 0) {
-                continue;
-            }
-
-            if (piece.type == PieceType::Pawn) {
-                const int direction = piece.color == Color::White ? 1 : -1;
-                if (fileDistance == 1 && rankDifference == direction) {
-                    return true;
-                }
-            }
-
-            if (piece.type == PieceType::Knight) {
-                if ((fileDistance == 1 && rankDistance == 2) ||
-                    (fileDistance == 2 && rankDistance == 1)) {
-                    return true;
-                }
-            }
-
-            if (piece.type == PieceType::King) {
-                if (fileDistance <= 1 && rankDistance <= 1) {
-                    return true;
-                }
-            }
-
-            const bool straight = fileDifference == 0 || rankDifference == 0;
-            const bool diagonal = fileDistance == rankDistance;
-            const bool slidingAttack =
-                (piece.type == PieceType::Rook && straight) ||
-                (piece.type == PieceType::Bishop && diagonal) ||
-                (piece.type == PieceType::Queen && (straight || diagonal));
-            if (!slidingAttack) {
-                continue;
-            }
-
-            // Each step is -1, 0, or 1, pointing toward the target square.
-            int fileStep = 0;
-            if (fileDifference > 0) {
-                fileStep = 1;
-            } else if (fileDifference < 0) {
-                fileStep = -1;
-            }
-
-            int rankStep = 0;
-            if (rankDifference > 0) {
-                rankStep = 1;
-            } else if (rankDifference < 0) {
-                rankStep = -1;
-            }
-
-            int currentFile = file + fileStep;
-            int currentRank = rank + rankStep;
-            bool blocked = false;
-
-            // Only intervening pieces block: the target can be occupied by either color.
-            while (currentFile != square.file || currentRank != square.rank) {
-                if (position.board.at(currentFile, currentRank).type != PieceType::None) {
-                    blocked = true;
-                    break;
-                }
-                currentFile += fileStep;
-                currentRank += rankStep;
-            }
-            if (!blocked) {
+            if (piece.type == PieceType::Pawn &&
+                piece.color == attackingColor) {
                 return true;
             }
         }
     }
+    constexpr int straightDirections[4][2] = {
+        {1, 0}, {-1, 0}, {0, 1}, {0, -1}
+    };
+
+    for (const auto &dir : straightDirections) {
+        int currentFile = square.file + dir[0];
+        int currentRank = square.rank + dir[1];
+
+        while (currentFile >= 0 && currentFile < 8 &&
+               currentRank >= 0 && currentRank < 8) {
+            const Piece &piece =
+                position.board.at(currentFile, currentRank);
+
+            if (piece.type != PieceType::None) {
+                if ((piece.type == PieceType::Rook || piece.type == PieceType::Queen) &&
+                    piece.color == attackingColor) {
+                    return true;
+                }
+                break;
+            }
+
+            currentFile += dir[0];
+            currentRank += dir[1];
+        }
+    }
+
+    constexpr int diagonalDirections[4][2] = {
+        {1, 1}, {1, -1}, {-1, 1}, {-1, -1}
+    };
+
+    for (const auto &dir : diagonalDirections) {
+        int currentFile = square.file + dir[0];
+        int currentRank = square.rank + dir[1];
+
+        while (currentFile >= 0 && currentFile < 8 &&
+               currentRank >= 0 && currentRank < 8) {
+            const Piece &piece =
+                position.board.at(currentFile, currentRank);
+
+            if (piece.type != PieceType::None) {
+                if ((piece.type == PieceType::Bishop || piece.type == PieceType::Queen) &&
+                    piece.color == attackingColor) {
+                    return true;
+                }
+                break;
+            }
+
+            currentFile += dir[0];
+            currentRank += dir[1];
+        }
+    }
+
     return false;
+
 }
 
 // Check detection
